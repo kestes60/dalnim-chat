@@ -411,6 +411,56 @@
       line-height: 1.4;
     }
 
+    /* ===== IDENTITY OVERLAY ===== */
+    .identity-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--sky);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 99;
+      padding: 32px;
+    }
+    .identity-overlay.hidden { display: none; }
+    .identity-overlay .identity-question {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--moon-glow);
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+    }
+    .identity-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 280px;
+    }
+    .identity-buttons button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .identity-buttons button:first-child {
+      background: var(--teal-dark);
+      color: var(--teal-bright);
+      border-color: var(--teal-mid);
+    }
+    .identity-buttons button:last-child {
+      background: var(--panel);
+      color: var(--moon-mid);
+      border-color: var(--moon-deep);
+    }
+
     /* ===== AUTH OVERLAY ===== */
     .auth-overlay {
       position: absolute;
@@ -480,6 +530,15 @@
 </head>
 <body>
   <div id="app">
+    <!-- Identity overlay (shown once after auth) -->
+    <div class="identity-overlay hidden" id="identityOverlay">
+      <div class="identity-question">Who are you?</div>
+      <div class="identity-buttons">
+        <button onclick="setIdentity('keith')">Keith</button>
+        <button onclick="setIdentity('friend')">달님</button>
+      </div>
+    </div>
+
     <!-- Auth overlay -->
     <div class="auth-overlay" id="authOverlay">
       <h2>달님 <span class="sep" style="color:var(--teal-mid)">·</span> Dalnim</h2>
@@ -564,7 +623,10 @@
 
     <!-- Screen 4: Private Chat -->
     <div class="screen" id="screen-chat">
-      <div class="privacy-badge">🔒 Private · Only you and Keith</div>
+      <div class="privacy-badge" style="display:flex;justify-content:space-between;align-items:center">
+        <span id="privacyLabel">🔒 Private</span>
+        <span onclick="switchIdentity()" style="font-size:10px;color:var(--cream-dim);cursor:pointer;opacity:0.5">switch identity</span>
+      </div>
       <div class="messages" id="chatMessages"></div>
       <div class="input-bar">
         <textarea id="chatInput" rows="1" placeholder="Keith에게 메시지 · Message Keith..." oninput="autoResize(this)"></textarea>
@@ -585,6 +647,7 @@
     let chatUsage = 0;
     let imageUsage = 0;
     let authToken = sessionStorage.getItem('dalnim_auth') || '';
+    let userIdentity = localStorage.getItem('dalnim_identity') || ''; // 'keith' or 'friend'
     let supabaseChannel = null;
 
     const MODEL_COLORS = { claude: '#D4890A', chatgpt: '#10A37F', gemini: '#4285F4' };
@@ -593,6 +656,9 @@
     function checkAuth() {
       if (authToken) {
         document.getElementById('authOverlay').classList.add('hidden');
+        if (!userIdentity) {
+          document.getElementById('identityOverlay').classList.remove('hidden');
+        }
       }
     }
 
@@ -611,14 +677,42 @@
           sessionStorage.setItem('dalnim_auth', authToken);
           document.getElementById('authOverlay').classList.add('hidden');
           document.getElementById('authError').style.display = 'none';
-          loadPrivateMessages();
-          subscribeToMessages();
+          if (!userIdentity) {
+            document.getElementById('identityOverlay').classList.remove('hidden');
+          } else {
+            applyIdentity();
+            loadPrivateMessages();
+            subscribeToMessages();
+          }
         } else {
           document.getElementById('authError').style.display = 'block';
         }
       } catch {
         document.getElementById('authError').style.display = 'block';
       }
+    }
+
+    // ===== IDENTITY =====
+    function setIdentity(id) {
+      userIdentity = id;
+      localStorage.setItem('dalnim_identity', id);
+      document.getElementById('identityOverlay').classList.add('hidden');
+      applyIdentity();
+      loadPrivateMessages();
+      subscribeToMessages();
+    }
+
+    function applyIdentity() {
+      const other = userIdentity === 'keith' ? '달님' : 'Keith';
+      document.getElementById('chatInput').placeholder = `Message ${other}...`;
+      document.getElementById('privacyLabel').textContent = `🔒 Private · ${userIdentity === 'keith' ? 'Keith' : '달님'}`;
+    }
+
+    function switchIdentity() {
+      localStorage.removeItem('dalnim_identity');
+      userIdentity = '';
+      document.getElementById('chatMessages').innerHTML = '';
+      document.getElementById('identityOverlay').classList.remove('hidden');
     }
 
     document.getElementById('authPassword').addEventListener('keydown', e => {
@@ -894,9 +988,10 @@
 
     function renderPrivateMessage(msg) {
       const container = document.getElementById('chatMessages');
-      const isKeith = msg.sender === 'keith';
-      const type = isKeith ? 'other' : 'user';
+      const isMine = msg.sender === userIdentity;
+      const type = isMine ? 'user' : 'other';
       const time = new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      const senderLabel = msg.sender === 'keith' ? 'Keith' : '달님';
 
       const div = document.createElement('div');
       div.className = `msg ${type}`;
@@ -904,9 +999,9 @@
       div.dataset.created = msg.created_at;
 
       let html = `<div class="bubble">${escapeHtml(msg.content)}</div>`;
-      html += `<div class="meta">${isKeith ? 'Keith' : ''} · ${time}</div>`;
+      html += `<div class="meta">${isMine ? '' : senderLabel + ' · '}${time}</div>`;
 
-      if (isKeith) {
+      if (!isMine) {
         html += `<button class="inline-translate-btn" onclick="translateInline(this, '${escapeHtml(msg.content.replace(/'/g, "\\'"))}')">🌐 번역 · Translate</button>`;
       }
 
@@ -953,16 +1048,36 @@
       input.style.height = 'auto';
       document.getElementById('chatSendBtn').disabled = true;
 
+      // Optimistic render so the message appears immediately
+      const now = new Date().toISOString();
+      const tempId = 'temp-' + Date.now();
+      renderPrivateMessage({
+        id: tempId,
+        sender: userIdentity,
+        content: text,
+        created_at: now
+      });
+
       try {
-        await fetch(`${API_BASE}/api/message`, {
+        const res = await fetch(`${API_BASE}/api/message`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${authToken}`
           },
-          body: JSON.stringify({ action: 'send', sender: 'friend', content: text })
+          body: JSON.stringify({ action: 'send', sender: userIdentity, content: text })
         });
-      } catch { /* silent */ }
+        const data = await res.json();
+        // Replace temp ID with real ID so poll dedup works
+        const msg = data.message;
+        if (res.ok && msg?.id) {
+          const tempEl = document.querySelector(`[data-id="${tempId}"]`);
+          if (tempEl) {
+            tempEl.dataset.id = msg.id;
+            tempEl.dataset.created = msg.created_at || now;
+          }
+        }
+      } catch { /* silent — message already shown optimistically */ }
       document.getElementById('chatSendBtn').disabled = false;
     }
 
@@ -1023,7 +1138,8 @@
     // ===== INIT =====
     checkAuth();
     fetchUsage();
-    if (authToken) {
+    if (authToken && userIdentity) {
+      applyIdentity();
       loadPrivateMessages();
       subscribeToMessages();
     }
