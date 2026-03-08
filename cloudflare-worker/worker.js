@@ -14,7 +14,7 @@
  *   SUPABASE_URL        — Supabase project URL (e.g. https://xyz.supabase.co)
  *   SUPABASE_SERVICE_KEY— Supabase service role key
  *   APP_PASSWORD         — Shared password for private chat authentication
- *   ALLOWED_ORIGIN       — GitHub Pages origin (e.g. https://username.github.io), fallback "*"
+ *   ALLOWED_ORIGIN       — Set to https://kestes60.github.io in Cloudflare Dashboard
  *   DAILY_CHAT_LIMIT     — Max chat messages per day (default 50)
  *   DAILY_IMAGE_LIMIT    — Max image generations per day (default 5)
  *
@@ -77,8 +77,9 @@ async function getCounter(kv, key) {
 async function callClaude(messages, system, env) {
   const body = {
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 1024,
+    max_tokens: 4096,
     messages,
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
   };
   if (system) {
     body.system = system;
@@ -89,7 +90,7 @@ async function callClaude(messages, system, env) {
     headers: {
       'Content-Type': 'application/json',
       'x-api-key': env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
+      'anthropic-version': '2025-03-05',
     },
     body: JSON.stringify(body),
   });
@@ -100,7 +101,8 @@ async function callClaude(messages, system, env) {
   }
 
   const data = await res.json();
-  return data.content[0].text;
+  const textParts = data.content.filter(b => b.type === 'text').map(b => b.text);
+  return textParts.join('\n\n');
 }
 
 async function callChatGPT(messages, system, env) {
@@ -117,7 +119,7 @@ async function callChatGPT(messages, system, env) {
       'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o-search-preview',
       messages: apiMessages,
       max_tokens: 1024,
     }),
@@ -139,7 +141,7 @@ async function callGemini(messages, system, env) {
     parts: [{ text: m.content }],
   }));
 
-  const body = { contents };
+  const body = { contents, tools: [{ googleSearch: {} }] };
 
   if (system) {
     body.systemInstruction = { parts: [{ text: system }] };

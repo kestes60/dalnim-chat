@@ -522,6 +522,63 @@
       display: none;
     }
 
+    /* ===== VOICE BUTTON ===== */
+    #voiceBtn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--cream-dim);
+      font-size: 18px;
+    }
+    #voiceBtn.voice-active {
+      background: var(--red-dome);
+      border-color: var(--red-dome);
+      color: #fff;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    /* ===== EMOJI PICKER ===== */
+    #screen-chat .input-bar { position: relative; }
+    #emojiBtn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--cream-dim);
+      font-size: 18px;
+    }
+    .emoji-picker {
+      position: absolute;
+      bottom: 100%;
+      left: 8px;
+      right: 8px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .emoji-picker button {
+      width: auto;
+      height: auto;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      font-size: 22px;
+      padding: 6px;
+      cursor: pointer;
+    }
+    .emoji-picker button:hover { background: var(--border); }
+
+    /* ===== IMAGE HINT ===== */
+    .image-hint {
+      font-size: 12px;
+      color: var(--teal-mid);
+      font-family: 'Courier New', monospace;
+      padding: 6px 14px;
+      opacity: 0.8;
+    }
+
     /* Scrollbar */
     .messages::-webkit-scrollbar { width: 4px; }
     .messages::-webkit-scrollbar-track { background: transparent; }
@@ -587,6 +644,7 @@
       <div class="messages" id="aiMessages"></div>
       <div class="input-bar">
         <textarea id="aiInput" rows="1" placeholder="메시지를 입력하세요 · Type a message..." oninput="autoResize(this)"></textarea>
+        <button id="voiceBtn" onclick="toggleVoice()">🎤</button>
         <button onclick="sendAiMessage()" id="aiSendBtn">↑</button>
       </div>
     </div>
@@ -630,6 +688,7 @@
       <div class="messages" id="chatMessages"></div>
       <div class="input-bar">
         <textarea id="chatInput" rows="1" placeholder="Keith에게 메시지 · Message Keith..." oninput="autoResize(this)"></textarea>
+        <button id="emojiBtn" onclick="toggleEmojiPicker()">😊</button>
         <button onclick="sendPrivateMessage()" id="chatSendBtn">↑</button>
       </div>
     </div>
@@ -830,6 +889,14 @@
         if (res.ok && data.content) {
           chatHistory.push({ role: 'assistant', content: data.content });
           addMessage(container, 'ai', escapeHtml(data.content), `${currentModel} · ${timeStr()}`);
+          // Image tab hint
+          if (/\b(image|picture|draw|generate|이미지|그림)\b/i.test(text)) {
+            const hint = document.createElement('div');
+            hint.className = 'image-hint';
+            hint.textContent = '💡 이미지 탭에서 그림을 생성할 수 있어요 · Try the Image tab to generate pictures';
+            container.appendChild(hint);
+            scrollToBottom(container);
+          }
           chatUsage++;
           updateMeter(
             document.getElementById('chatCount'),
@@ -1109,7 +1176,7 @@
             });
           }
         } catch { /* silent */ }
-      }, 3000);
+      }, 5000);
     }
 
     function getLastMessageTime() {
@@ -1117,6 +1184,96 @@
       if (!msgs.length) return new Date(0).toISOString();
       const last = msgs[msgs.length - 1];
       return last.dataset.created || new Date(0).toISOString();
+    }
+
+    // ===== VOICE INPUT =====
+    let recognition = null;
+    let isRecording = false;
+
+    function toggleVoice() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('음성 인식이 지원되지 않습니다 · Voice input is not supported in this browser');
+        return;
+      }
+
+      if (isRecording && recognition) {
+        recognition.stop();
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = 'ko-KR';
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        isRecording = true;
+        document.getElementById('voiceBtn').classList.add('voice-active');
+      };
+
+      recognition.onresult = (e) => {
+        const transcript = e.results[0][0].transcript;
+        const input = document.getElementById('aiInput');
+        input.value += (input.value ? ' ' : '') + transcript;
+        autoResize(input);
+      };
+
+      recognition.onend = () => {
+        isRecording = false;
+        document.getElementById('voiceBtn').classList.remove('voice-active');
+      };
+
+      recognition.onerror = () => {
+        isRecording = false;
+        document.getElementById('voiceBtn').classList.remove('voice-active');
+      };
+
+      recognition.start();
+    }
+
+    // ===== EMOJI PICKER =====
+    const EMOJI_LIST = [
+      '😊', '😂', '🥰', '😍', '🤗', '😎', '🥺', '😢',
+      '❤️', '🔥', '✨', '🎉', '👍', '👏', '🙏', '💪',
+      '🌙', '⭐', '🌸', '🎨', '📸', '🎵', '☕', '🍜',
+    ];
+
+    function toggleEmojiPicker() {
+      const existing = document.querySelector('.emoji-picker');
+      if (existing) { existing.remove(); return; }
+
+      const picker = document.createElement('div');
+      picker.className = 'emoji-picker';
+      EMOJI_LIST.forEach(emoji => {
+        const btn = document.createElement('button');
+        btn.textContent = emoji;
+        btn.onclick = () => insertEmoji(emoji);
+        picker.appendChild(btn);
+      });
+
+      const inputBar = document.querySelector('#screen-chat .input-bar');
+      inputBar.appendChild(picker);
+
+      // Outside click dismiss
+      setTimeout(() => {
+        document.addEventListener('click', function closePicker(e) {
+          if (!picker.contains(e.target) && e.target.id !== 'emojiBtn') {
+            picker.remove();
+            document.removeEventListener('click', closePicker);
+          }
+        });
+      }, 0);
+    }
+
+    function insertEmoji(emoji) {
+      const input = document.getElementById('chatInput');
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+      input.value = input.value.substring(0, start) + emoji + input.value.substring(end);
+      input.selectionStart = input.selectionEnd = start + emoji.length;
+      input.focus();
+      const picker = document.querySelector('.emoji-picker');
+      if (picker) picker.remove();
     }
 
     // ===== USAGE SYNC =====

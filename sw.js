@@ -1,17 +1,24 @@
-const CACHE_NAME = 'dalnim-v1';
+const CACHE_NAME = 'dalnim-v2';
 
 const APP_SHELL = [
   '/',
   '/index.html',
   '/manifest.json',
-  'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap',
-  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap',
+  'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Cormorant+Garamond:ital@1&display=swap',
 ];
 
 // ---------- INSTALL ----------
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const url of APP_SHELL) {
+        try {
+          await cache.add(url);
+        } catch (err) {
+          console.warn('SW: failed to cache', url, err.message);
+        }
+      }
+    })
   );
   self.skipWaiting();
 });
