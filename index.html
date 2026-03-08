@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#D4890A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>달님 · Dalnim</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/dalnim-icon-192x192.png">
+  <link rel="apple-touch-icon" href="icons/dalnim-icon-180x180.png">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Cormorant+Garamond:ital@1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sky:         #0A0A0F;
+      --night:       #0F0F1A;
+      --panel:       #141420;
+      --moon-deep:   #D4890A;
+      --moon-mid:    #E8A020;
+      --moon-glow:   #F0B830;
+      --teal-dark:   #0D5A5A;
+      --teal-mid:    #1A8A8A;
+      --teal-bright: #2ABAAA;
+      --cream:       #E8DCC0;
+      --cream-dim:   #A89878;
+      --red-dome:    #C04030;
+      --border:      #2A2A3A;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #000;
+      color: var(--cream);
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+      height: 100dvh;
+    }
+
+    /* Phone frame on desktop */
+    #app {
+      max-width: 480px;
+      width: 100%;
+      height: 100dvh;
+      margin: 0 auto;
+      background: var(--sky);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    @media (min-width: 481px) {
+      body { display: flex; align-items: center; justify-content: center; }
+      #app {
+        height: min(100dvh, 900px);
+        border-radius: 24px;
+        box-shadow: 0 0 60px rgba(212, 137, 10, 0.08);
+      }
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      text-align: center;
+      padding: 16px 16px 10px;
+      background: var(--sky);
+      position: relative;
+      flex-shrink: 0;
+      padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px; height: 80px;
+      background: radial-gradient(ellipse, rgba(240, 184, 48, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    header h1 {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: 3px;
+      color: var(--moon-glow);
+    }
+    header h1 .sep { color: var(--teal-mid); }
+    header .tagline {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 13px;
+      color: var(--cream-dim);
+      margin-top: 2px;
+    }
+
+    /* ===== TAB BAR ===== */
+    nav {
+      display: flex;
+      background: var(--night);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    nav button {
+      flex: 1;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 10px 4px 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #444;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    nav button .tab-icon { font-size: 18px; }
+    nav button.active {
+      color: var(--moon-mid);
+      border-bottom-color: var(--moon-deep);
+    }
+
+    /* ===== SCREENS ===== */
+    .screen {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .screen.active { display: flex; }
+
+    /* ===== COMMON CHAT LAYOUT ===== */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .msg { max-width: 82%; display: flex; flex-direction: column; gap: 2px; }
+    .msg.user { align-self: flex-end; }
+    .msg.ai, .msg.other { align-self: flex-start; }
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 15px;
+      line-height: 1.5;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .msg.user .bubble {
+      background: var(--teal-dark);
+      border: 1px solid var(--teal-mid);
+      border-bottom-right-radius: 4px;
+    }
+    .msg.ai .bubble, .msg.other .bubble {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .msg .meta {
+      font-size: 11px;
+      color: var(--cream-dim);
+      font-family: 'Courier New', monospace;
+      padding: 0 4px;
+    }
+    .msg.user .meta { text-align: right; }
+
+    /* Image in bubble */
+    .bubble img {
+      max-width: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+      display: block;
+    }
+    .bubble .img-meta {
+      font-size: 11px;
+      color: var(--cream-dim);
+      margin-top: 6px;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* Loading dots */
+    .loading-dots { display: flex; gap: 4px; padding: 4px 0; }
+    .loading-dots span {
+      width: 8px; height: 8px;
+      background: var(--moon-mid);
+      border-radius: 50%;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    /* ===== INPUT BAR ===== */
+    .input-bar {
+      display: flex;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--night);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      align-items: flex-end;
+    }
+    .input-bar textarea {
+      flex: 1;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 10px 16px;
+      color: var(--cream);
+      font-size: 16px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      max-height: 120px;
+      min-height: 44px;
+      line-height: 1.4;
+    }
+    .input-bar textarea::placeholder { color: var(--cream-dim); }
+    .input-bar button {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: var(--moon-deep);
+      color: var(--sky);
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s;
+    }
+    .input-bar button:disabled { opacity: 0.4; cursor: default; }
+
+    /* ===== MODEL SELECTOR ===== */
+    .model-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--night);
+      flex-shrink: 0;
+    }
+    .model-bar select {
+      flex: 1;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: var(--cream);
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+      outline: none;
+      appearance: none;
+      cursor: pointer;
+    }
+    .model-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ===== USAGE METER ===== */
+    .usage-meter {
+      padding: 6px 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--cream-dim);
+      flex-shrink: 0;
+    }
+    .meter-bar {
+      height: 4px;
+      background: #222;
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .meter-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+    .meter-fill.gold { background: linear-gradient(90deg, var(--moon-deep), var(--moon-glow)); }
+    .meter-fill.teal { background: linear-gradient(90deg, var(--teal-dark), var(--teal-bright)); }
+
+    /* ===== TRANSLATION TAB ===== */
+    .translate-screen { padding: 16px; overflow-y: auto; flex: 1; }
+    .direction-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .direction-toggle button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--panel);
+      color: #555;
+    }
+    .direction-toggle button.active {
+      background: var(--teal-dark);
+      color: var(--teal-bright);
+      border-color: var(--teal-mid);
+    }
+    .translate-input {
+      width: 100%;
+      min-height: 100px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--cream);
+      font-size: 16px;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+      margin-bottom: 12px;
+    }
+    .translate-input::placeholder { color: var(--cream-dim); }
+    .translate-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--moon-deep);
+      color: var(--sky);
+      border: none;
+      border-radius: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 15px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: opacity 0.2s;
+    }
+    .translate-btn:disabled { opacity: 0.5; }
+    .translate-result {
+      background: #0A1A1A;
+      border: 1px solid var(--teal-dark);
+      border-radius: 12px;
+      padding: 14px;
+      display: none;
+    }
+    .translate-result.visible { display: block; }
+    .translate-result .result-label {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--teal-mid);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .translate-result .result-text {
+      color: var(--teal-bright);
+      font-size: 15px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .translate-note {
+      font-size: 11px;
+      color: var(--cream-dim);
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    /* ===== PRIVATE CHAT ===== */
+    .privacy-badge {
+      padding: 8px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: var(--teal-bright);
+      flex-shrink: 0;
+    }
+    .inline-translate-btn {
+      background: transparent;
+      border: 1px solid var(--teal-dark);
+      color: var(--teal-bright);
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .inline-translation {
+      background: #0A1A1A;
+      border: 1px solid var(--teal-dark);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--teal-bright);
+      font-size: 13px;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* ===== AUTH OVERLAY ===== */
+    .auth-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--sky);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 32px;
+    }
+    .auth-overlay.hidden { display: none; }
+    .auth-overlay h2 {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-weight: 700;
+      font-size: 24px;
+      color: var(--moon-glow);
+      letter-spacing: 3px;
+      margin-bottom: 4px;
+    }
+    .auth-overlay .auth-tagline {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      color: var(--cream-dim);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+    .auth-overlay input {
+      width: 100%;
+      max-width: 280px;
+      padding: 12px 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--cream);
+      font-size: 16px;
+      text-align: center;
+      outline: none;
+      margin-bottom: 12px;
+    }
+    .auth-overlay input::placeholder { color: var(--cream-dim); }
+    .auth-overlay .auth-btn {
+      width: 100%;
+      max-width: 280px;
+      padding: 12px;
+      background: var(--moon-deep);
+      color: var(--sky);
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .auth-error {
+      color: var(--red-dome);
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    /* Scrollbar */
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-track { background: transparent; }
+    .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Auth overlay -->
+    <div class="auth-overlay" id="authOverlay">
+      <h2>달님 <span class="sep" style="color:var(--teal-mid)">·</span> Dalnim</h2>
+      <div class="auth-tagline">your private space</div>
+      <input type="password" id="authPassword" placeholder="비밀번호 · Password" autocomplete="off">
+      <button class="auth-btn" onclick="authenticate()">Enter</button>
+      <div class="auth-error" id="authError">비밀번호가 맞지 않습니다 · Incorrect password</div>
+    </div>
+
+    <!-- Header -->
+    <header>
+      <h1>달님 <span class="sep">·</span> Dalnim</h1>
+      <div class="tagline">your private space</div>
+    </header>
+
+    <!-- Tab bar -->
+    <nav id="tabBar">
+      <button class="active" onclick="switchTab('ai')">
+        <span class="tab-icon">🤖</span> AI
+      </button>
+      <button onclick="switchTab('translate')">
+        <span class="tab-icon">🌐</span> 번역
+      </button>
+      <button onclick="switchTab('image')">
+        <span class="tab-icon">🎨</span> 이미지
+      </button>
+      <button onclick="switchTab('chat')">
+        <span class="tab-icon">💬</span> 채팅
+      </button>
+    </nav>
+
+    <!-- Screen 1: AI Chat -->
+    <div class="screen active" id="screen-ai">
+      <div class="model-bar">
+        <div class="model-dot" id="modelDot" style="background:#D4890A"></div>
+        <select id="modelSelect" onchange="onModelChange()">
+          <option value="claude">Claude (Anthropic)</option>
+          <option value="chatgpt">ChatGPT (OpenAI)</option>
+          <option value="gemini">Gemini (Google)</option>
+        </select>
+      </div>
+      <div class="usage-meter">
+        <span>Today · <span id="chatCount">0</span> / <span id="chatLimit">50</span> messages</span>
+        <div class="meter-bar"><div class="meter-fill gold" id="chatMeter" style="width:0%"></div></div>
+      </div>
+      <div class="messages" id="aiMessages"></div>
+      <div class="input-bar">
+        <textarea id="aiInput" rows="1" placeholder="메시지를 입력하세요 · Type a message..." oninput="autoResize(this)"></textarea>
+        <button onclick="sendAiMessage()" id="aiSendBtn">↑</button>
+      </div>
+    </div>
+
+    <!-- Screen 2: Translation -->
+    <div class="screen" id="screen-translate">
+      <div class="translate-screen">
+        <div class="direction-toggle">
+          <button class="active" id="dirKoEn" onclick="setDirection('ko-en')">한국어 → 영어</button>
+          <button id="dirEnKo" onclick="setDirection('en-ko')">English → 한국어</button>
+        </div>
+        <textarea class="translate-input" id="translateInput" placeholder="번역할 텍스트를 입력하세요 · Paste text to translate"></textarea>
+        <button class="translate-btn" id="translateBtn" onclick="doTranslate()">↓ 번역 · TRANSLATE ↓</button>
+        <div class="translate-result" id="translateResult">
+          <div class="result-label" id="resultLabel">🌐 English</div>
+          <div class="result-text" id="resultText"></div>
+        </div>
+        <div class="translate-note" id="translateNote" style="display:none">counts as 1 message from your daily allowance</div>
+      </div>
+    </div>
+
+    <!-- Screen 3: Image Generation -->
+    <div class="screen" id="screen-image">
+      <div class="usage-meter">
+        <span>이미지 today · <span id="imageCount">0</span> / <span id="imageLimit">5</span></span>
+        <div class="meter-bar"><div class="meter-fill teal" id="imageMeter" style="width:0%"></div></div>
+      </div>
+      <div class="messages" id="imageMessages"></div>
+      <div class="input-bar">
+        <textarea id="imageInput" rows="1" placeholder="이미지를 설명하세요 · Describe your image..." oninput="autoResize(this)"></textarea>
+        <button onclick="sendImagePrompt()" id="imageSendBtn">✦</button>
+      </div>
+    </div>
+
+    <!-- Screen 4: Private Chat -->
+    <div class="screen" id="screen-chat">
+      <div class="privacy-badge">🔒 Private · Only you and Keith</div>
+      <div class="messages" id="chatMessages"></div>
+      <div class="input-bar">
+        <textarea id="chatInput" rows="1" placeholder="Keith에게 메시지 · Message Keith..." oninput="autoResize(this)"></textarea>
+        <button onclick="sendPrivateMessage()" id="chatSendBtn">↑</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== CONFIG =====
+    const API_BASE = ''; // Set to your Cloudflare Worker URL, e.g. https://dalnim-api.yourname.workers.dev
+
+    // ===== STATE =====
+    let currentTab = 'ai';
+    let currentModel = 'claude';
+    let chatHistory = []; // {role, content} pairs for AI chat
+    let translateDirection = 'ko-en';
+    let chatUsage = 0;
+    let imageUsage = 0;
+    let authToken = sessionStorage.getItem('dalnim_auth') || '';
+    let supabaseChannel = null;
+
+    const MODEL_COLORS = { claude: '#D4890A', chatgpt: '#10A37F', gemini: '#4285F4' };
+
+    // ===== AUTH =====
+    function checkAuth() {
+      if (authToken) {
+        document.getElementById('authOverlay').classList.add('hidden');
+      }
+    }
+
+    async function authenticate() {
+      const pw = document.getElementById('authPassword').value;
+      if (!pw) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pw })
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+          authToken = data.token;
+          sessionStorage.setItem('dalnim_auth', authToken);
+          document.getElementById('authOverlay').classList.add('hidden');
+          document.getElementById('authError').style.display = 'none';
+          loadPrivateMessages();
+          subscribeToMessages();
+        } else {
+          document.getElementById('authError').style.display = 'block';
+        }
+      } catch {
+        document.getElementById('authError').style.display = 'block';
+      }
+    }
+
+    document.getElementById('authPassword').addEventListener('keydown', e => {
+      if (e.key === 'Enter') authenticate();
+    });
+
+    // ===== TABS =====
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(`screen-${tab}`).classList.add('active');
+      document.querySelectorAll('#tabBar button').forEach((b, i) => {
+        const tabs = ['ai', 'translate', 'image', 'chat'];
+        b.classList.toggle('active', tabs[i] === tab);
+      });
+    }
+
+    // ===== MODEL =====
+    function onModelChange() {
+      const newModel = document.getElementById('modelSelect').value;
+      if (newModel !== currentModel && chatHistory.length > 0) {
+        if (confirm('모델을 변경하면 대화 기록이 삭제됩니다.\nSwitching models will clear conversation history.\n\nContinue?')) {
+          chatHistory = [];
+          document.getElementById('aiMessages').innerHTML = '';
+        } else {
+          document.getElementById('modelSelect').value = currentModel;
+          return;
+        }
+      }
+      currentModel = newModel;
+      document.getElementById('modelDot').style.background = MODEL_COLORS[currentModel];
+    }
+
+    // ===== AUTO-RESIZE TEXTAREA =====
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    // ===== HELPERS =====
+    function timeStr() {
+      return new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function scrollToBottom(container) {
+      requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
+    }
+
+    function addMessage(container, type, html, meta) {
+      const div = document.createElement('div');
+      div.className = `msg ${type}`;
+      div.innerHTML = `<div class="bubble">${html}</div>` +
+        (meta ? `<div class="meta">${meta}</div>` : '');
+      container.appendChild(div);
+      scrollToBottom(container);
+      return div;
+    }
+
+    function addLoadingBubble(container) {
+      const div = document.createElement('div');
+      div.className = 'msg ai';
+      div.id = 'loading-bubble';
+      div.innerHTML = `<div class="bubble"><div class="loading-dots"><span></span><span></span><span></span></div></div>`;
+      container.appendChild(div);
+      scrollToBottom(container);
+      return div;
+    }
+
+    function removeLoadingBubble() {
+      const el = document.getElementById('loading-bubble');
+      if (el) el.remove();
+    }
+
+    function updateMeter(countEl, meterEl, count, limit) {
+      countEl.textContent = count;
+      meterEl.style.width = Math.min((count / limit) * 100, 100) + '%';
+    }
+
+    function escapeHtml(text) {
+      const d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
+    // ===== AI CHAT =====
+    async function sendAiMessage() {
+      const input = document.getElementById('aiInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const container = document.getElementById('aiMessages');
+      input.value = '';
+      input.style.height = 'auto';
+      document.getElementById('aiSendBtn').disabled = true;
+
+      addMessage(container, 'user', escapeHtml(text), timeStr());
+      chatHistory.push({ role: 'user', content: text });
+
+      // Keep last 10 pairs (20 messages)
+      if (chatHistory.length > 20) {
+        chatHistory = chatHistory.slice(chatHistory.length - 20);
+      }
+
+      addLoadingBubble(container);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: currentModel, messages: chatHistory })
+        });
+        const data = await res.json();
+        removeLoadingBubble();
+
+        if (res.ok && data.content) {
+          chatHistory.push({ role: 'assistant', content: data.content });
+          addMessage(container, 'ai', escapeHtml(data.content), `${currentModel} · ${timeStr()}`);
+          chatUsage++;
+          updateMeter(
+            document.getElementById('chatCount'),
+            document.getElementById('chatMeter'),
+            chatUsage,
+            parseInt(document.getElementById('chatLimit').textContent)
+          );
+        } else {
+          addMessage(container, 'ai', `<span style="color:var(--red-dome)">${escapeHtml(data.error || '잠시 후 다시 시도해 주세요 · Please try again in a moment')}</span>`, timeStr());
+        }
+      } catch {
+        removeLoadingBubble();
+        addMessage(container, 'ai', `<span style="color:var(--red-dome)">잠시 후 다시 시도해 주세요 · Please try again in a moment</span>`, timeStr());
+      }
+      document.getElementById('aiSendBtn').disabled = false;
+    }
+
+    document.getElementById('aiInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(); }
+    });
+
+    // ===== TRANSLATION =====
+    function setDirection(dir) {
+      translateDirection = dir;
+      document.getElementById('dirKoEn').classList.toggle('active', dir === 'ko-en');
+      document.getElementById('dirEnKo').classList.toggle('active', dir === 'en-ko');
+      document.getElementById('resultLabel').textContent = dir === 'ko-en' ? '🌐 English' : '🌐 한국어';
+    }
+
+    async function doTranslate() {
+      const text = document.getElementById('translateInput').value.trim();
+      if (!text) return;
+
+      const btn = document.getElementById('translateBtn');
+      btn.disabled = true;
+      btn.textContent = '번역 중...';
+
+      const targetLang = translateDirection === 'ko-en' ? 'English' : 'Korean';
+      const systemPrompt = `You are a translator. Translate the following text to ${targetLang}. Return only the translation, nothing else.`;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: currentModel,
+            messages: [{ role: 'user', content: text }],
+            system: systemPrompt
+          })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.content) {
+          document.getElementById('resultText').textContent = data.content;
+          document.getElementById('translateResult').classList.add('visible');
+          document.getElementById('translateNote').style.display = 'block';
+          chatUsage++;
+          updateMeter(
+            document.getElementById('chatCount'),
+            document.getElementById('chatMeter'),
+            chatUsage,
+            parseInt(document.getElementById('chatLimit').textContent)
+          );
+        } else {
+          document.getElementById('resultText').textContent = data.error || '잠시 후 다시 시도해 주세요 · Please try again in a moment';
+          document.getElementById('translateResult').classList.add('visible');
+        }
+      } catch {
+        document.getElementById('resultText').textContent = '잠시 후 다시 시도해 주세요 · Please try again in a moment';
+        document.getElementById('translateResult').classList.add('visible');
+      }
+      btn.disabled = false;
+      btn.textContent = '↓ 번역 · TRANSLATE ↓';
+    }
+
+    // ===== IMAGE GENERATION =====
+    async function sendImagePrompt() {
+      const input = document.getElementById('imageInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const container = document.getElementById('imageMessages');
+      input.value = '';
+      input.style.height = 'auto';
+      document.getElementById('imageSendBtn').disabled = true;
+
+      addMessage(container, 'user', escapeHtml(text), timeStr());
+      addLoadingBubble(container);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/image`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: text })
+        });
+        const data = await res.json();
+        removeLoadingBubble();
+
+        if (res.ok && data.url) {
+          const imgHtml = `<img src="${escapeHtml(data.url)}" alt="${escapeHtml(text)}" onclick="downloadImage('${escapeHtml(data.url)}')">
+            <div class="img-meta">DALL-E · ${timeStr()} · tap to save</div>`;
+          addMessage(container, 'ai', imgHtml, '');
+          imageUsage++;
+          updateMeter(
+            document.getElementById('imageCount'),
+            document.getElementById('imageMeter'),
+            imageUsage,
+            parseInt(document.getElementById('imageLimit').textContent)
+          );
+        } else {
+          addMessage(container, 'ai', `<span style="color:var(--red-dome)">${escapeHtml(data.error || '잠시 후 다시 시도해 주세요 · Please try again in a moment')}</span>`, timeStr());
+        }
+      } catch {
+        removeLoadingBubble();
+        addMessage(container, 'ai', `<span style="color:var(--red-dome)">잠시 후 다시 시도해 주세요 · Please try again in a moment</span>`, timeStr());
+      }
+      document.getElementById('imageSendBtn').disabled = false;
+    }
+
+    async function downloadImage(url) {
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `dalnim-${Date.now()}.png`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      } catch {
+        window.open(url, '_blank');
+      }
+    }
+
+    document.getElementById('imageInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendImagePrompt(); }
+    });
+
+    // ===== PRIVATE CHAT =====
+    async function loadPrivateMessages() {
+      try {
+        const res = await fetch(`${API_BASE}/api/message?action=list`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+        const data = await res.json();
+        if (res.ok && data.messages) {
+          const container = document.getElementById('chatMessages');
+          container.innerHTML = '';
+          data.messages.forEach(msg => renderPrivateMessage(msg));
+        }
+      } catch { /* silent */ }
+    }
+
+    function renderPrivateMessage(msg) {
+      const container = document.getElementById('chatMessages');
+      const isKeith = msg.sender === 'keith';
+      const type = isKeith ? 'other' : 'user';
+      const time = new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+      const div = document.createElement('div');
+      div.className = `msg ${type}`;
+      div.dataset.id = msg.id;
+      div.dataset.created = msg.created_at;
+
+      let html = `<div class="bubble">${escapeHtml(msg.content)}</div>`;
+      html += `<div class="meta">${isKeith ? 'Keith' : ''} · ${time}</div>`;
+
+      if (isKeith) {
+        html += `<button class="inline-translate-btn" onclick="translateInline(this, '${escapeHtml(msg.content.replace(/'/g, "\\'"))}')">🌐 번역 · Translate</button>`;
+      }
+
+      div.innerHTML = html;
+      container.appendChild(div);
+      scrollToBottom(container);
+    }
+
+    async function translateInline(btn, text) {
+      if (btn.nextElementSibling?.classList.contains('inline-translation')) return;
+
+      btn.disabled = true;
+      btn.textContent = '번역 중...';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: currentModel,
+            messages: [{ role: 'user', content: text }],
+            system: 'You are a translator. Translate the following text to Korean. Return only the translation, nothing else.'
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.content) {
+          const el = document.createElement('div');
+          el.className = 'inline-translation';
+          el.textContent = data.content;
+          btn.after(el);
+          btn.style.display = 'none';
+        }
+      } catch { /* silent */ }
+      btn.disabled = false;
+      btn.textContent = '🌐 번역 · Translate';
+    }
+
+    async function sendPrivateMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = '';
+      input.style.height = 'auto';
+      document.getElementById('chatSendBtn').disabled = true;
+
+      try {
+        await fetch(`${API_BASE}/api/message`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({ action: 'send', sender: 'friend', content: text })
+        });
+      } catch { /* silent */ }
+      document.getElementById('chatSendBtn').disabled = false;
+    }
+
+    document.getElementById('chatInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPrivateMessage(); }
+    });
+
+    // ===== SUPABASE REALTIME =====
+    function subscribeToMessages() {
+      // Uses Supabase Realtime via the Worker as a proxy
+      // Poll as fallback since direct Supabase realtime needs the client library
+      setInterval(async () => {
+        if (!authToken) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/message?action=poll`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ action: 'poll', after: getLastMessageTime() })
+          });
+          const data = await res.json();
+          if (res.ok && data.messages?.length) {
+            data.messages.forEach(msg => {
+              if (!document.querySelector(`[data-id="${msg.id}"]`)) {
+                renderPrivateMessage(msg);
+              }
+            });
+          }
+        } catch { /* silent */ }
+      }, 3000);
+    }
+
+    function getLastMessageTime() {
+      const msgs = document.querySelectorAll('#chatMessages .msg');
+      if (!msgs.length) return new Date(0).toISOString();
+      const last = msgs[msgs.length - 1];
+      return last.dataset.created || new Date(0).toISOString();
+    }
+
+    // ===== USAGE SYNC =====
+    async function fetchUsage() {
+      try {
+        const res = await fetch(`${API_BASE}/api/usage`);
+        if (res.ok) {
+          const data = await res.json();
+          chatUsage = data.chat.used;
+          document.getElementById('chatLimit').textContent = data.chat.limit;
+          updateMeter(document.getElementById('chatCount'), document.getElementById('chatMeter'), chatUsage, data.chat.limit);
+          imageUsage = data.image.used;
+          document.getElementById('imageLimit').textContent = data.image.limit;
+          updateMeter(document.getElementById('imageCount'), document.getElementById('imageMeter'), imageUsage, data.image.limit);
+        }
+      } catch { /* silent */ }
+    }
+
+    // ===== INIT =====
+    checkAuth();
+    fetchUsage();
+    if (authToken) {
+      loadPrivateMessages();
+      subscribeToMessages();
+    }
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

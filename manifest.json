@@ -1,0 +1,25 @@
+{
+  "name": "달님 · Dalnim",
+  "short_name": "달님",
+  "description": "Your private AI space",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0F",
+  "theme_color": "#D4890A",
+  "icons": [
+    { "src": "icons/dalnim-icon-72x72.png", "sizes": "72x72", "type": "image/png", "purpose": "any" },
+    { "src": "icons/dalnim-icon-96x96.png", "sizes": "96x96", "type": "image/png", "purpose": "any" },
+    { "src": "icons/dalnim-icon-128x128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "icons/dalnim-icon-144x144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "icons/dalnim-icon-152x152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "icons/dalnim-icon-167x167.png", "sizes": "167x167", "type": "image/png", "purpose": "any" },
+    { "src": "icons/dalnim-icon-180x180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "icons/dalnim-icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/dalnim-icon-192x192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/dalnim-icon-228x228.png", "sizes": "228x228", "type": "image/png", "purpose": "any" },
+    { "src": "icons/dalnim-icon-256x256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "icons/dalnim-icon-384x384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "icons/dalnim-icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/dalnim-icon-512x512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

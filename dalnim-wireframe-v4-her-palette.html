@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>달님 · Dalnim — Wireframe v0.4</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── PALETTE FROM HER PAINTING ─────────────────────
+     Sky black:    #0A0A0F
+     Deep night:   #0F0F1A
+     Moon gold:    #D4890A  (deep amber)
+     Moon bright:  #F0B830  (peak glow)
+     Moon glow:    #E8A020  (mid tone)
+     Teal dark:    #0D5A5A
+     Teal mid:     #1A8A8A
+     Teal bright:  #2ABAAA
+     Cream:        #E8DCC0
+     Red dome:     #C04030
+  ──────────────────────────────────────────────────── */
+
+  :root {
+    --sky:        #0A0A0F;
+    --night:      #0F0F1A;
+    --panel:      #141420;
+    --moon-deep:  #D4890A;
+    --moon-mid:   #E8A020;
+    --moon-glow:  #F0B830;
+    --teal-dark:  #0D5A5A;
+    --teal-mid:   #1A8A8A;
+    --teal-bright:#2ABAAA;
+    --cream:      #E8DCC0;
+    --cream-dim:  #A89878;
+    --red-dome:   #C04030;
+    --text-main:  #E8DCC0;
+    --text-dim:   #7A6A50;
+    --border:     #2A2A3A;
+  }
+
+  body {
+    font-family: 'Courier New', monospace;
+    background: #1a1a28;
+    color: var(--cream);
+    padding: 24px;
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #2a2a3a;
+  }
+
+  .page-header h1 {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--cream-dim);
+    margin-bottom: 4px;
+  }
+
+  .page-header .palette-note {
+    font-size: 10px;
+    color: var(--teal-mid);
+    font-style: italic;
+  }
+
+  /* Palette swatch row */
+  .palette-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .swatch-color {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #333;
+  }
+
+  .swatch-label {
+    font-size: 8px;
+    color: var(--cream-dim);
+    text-align: center;
+  }
+
+  .screens-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 20px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 210px;
+    margin: 0 auto;
+    border: 3px solid #333;
+    border-radius: 30px;
+    overflow: hidden;
+    background: var(--sky);
+    padding: 5px;
+    box-shadow: 0 0 30px rgba(212, 137, 10, 0.15);
+  }
+
+  .phone-inner {
+    border-radius: 24px;
+    overflow: hidden;
+    min-height: 540px;
+    display: flex;
+    flex-direction: column;
+    background: var(--sky);
+  }
+
+  .status-bar {
+    background: var(--sky);
+    padding: 5px 12px;
+    font-size: 9px;
+    color: #444;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* APP HEADER — moonlight palette */
+  .app-header {
+    background: var(--sky);
+    padding: 10px 12px 8px;
+    text-align: center;
+    position: relative;
+    border-bottom: 1px solid #1a1a2a;
+  }
+
+  /* Moon glow behind the title */
+  .app-header::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, rgba(240,184,48,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .app-name-korean {
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--moon-glow);
+    letter-spacing: 3px;
+  }
+
+  .dot-sep { color: var(--teal-mid); margin: 0 5px; }
+
+  .app-name-roman {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 9px;
+    color: var(--cream-dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 2px;
+    font-style: italic;
+  }
+
+  /* Tab bar */
+  .tab-bar {
+    display: flex;
+    background: var(--night);
+    border-bottom: 1px solid #1e1e2e;
+  }
+
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 6px 2px;
+    font-size: 8px;
+    color: #444;
+    border-bottom: 2px solid transparent;
+  }
+
+  .tab.active {
+    color: var(--moon-mid);
+    border-bottom: 2px solid var(--moon-deep);
+  }
+
+  /* Model selector */
+  .model-selector {
+    padding: 5px 8px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .model-label { font-size: 8px; color: var(--cream-dim); white-space: nowrap; }
+
+  .model-dropdown {
+    flex: 1;
+    border: 1px solid #2a2a3a;
+    border-radius: 4px;
+    padding: 3px 5px;
+    font-size: 9px;
+    font-family: 'Courier New', monospace;
+    background: var(--night);
+    color: var(--cream);
+    appearance: none;
+  }
+
+  .model-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot-gpt     { background: #10a37f; }
+  .dot-claude  { background: var(--moon-deep); }
+  .dot-gemini  { background: #4285f4; }
+
+  /* Usage bar */
+  .usage-bar-wrap {
+    padding: 4px 8px 5px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .usage-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 8px;
+    color: var(--text-dim);
+    margin-bottom: 3px;
+  }
+
+  .usage-bar { height: 2px; background: #222; border-radius: 99px; overflow: hidden; }
+  .usage-fill-gold { height: 100%; width: 34%; background: linear-gradient(90deg, var(--moon-deep), var(--moon-glow)); border-radius: 99px; }
+  .usage-fill-teal { height: 100%; width: 40%; background: linear-gradient(90deg, var(--teal-dark), var(--teal-bright)); border-radius: 99px; }
+
+  /* Chat area */
+  .chat-area {
+    flex: 1;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    overflow: hidden;
+    background: var(--sky);
+  }
+
+  .msg {
+    max-width: 85%;
+    padding: 6px 8px;
+    border-radius: 10px;
+    font-size: 9px;
+    line-height: 1.4;
+  }
+
+  .msg.user {
+    background: var(--teal-dark);
+    color: var(--cream);
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+    border: 1px solid var(--teal-mid);
+  }
+
+  .msg.ai {
+    background: var(--panel);
+    color: var(--cream);
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+    border: 1px solid var(--border);
+  }
+
+  .msg.them {
+    background: var(--panel);
+    color: var(--cream);
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+    border: 1px solid var(--border);
+  }
+
+  .msg.me {
+    background: var(--teal-dark);
+    color: var(--cream);
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+    border: 1px solid var(--teal-mid);
+  }
+
+  .msg-meta { font-size: 7px; color: var(--text-dim); margin-top: 2px; }
+  .msg.user .msg-meta, .msg.me .msg-meta { text-align: right; }
+
+  /* Translate button */
+  .translate-btn {
+    display: inline-block;
+    margin-top: 4px;
+    background: transparent;
+    color: var(--teal-bright);
+    border: 1px solid var(--teal-dark);
+    border-radius: 3px;
+    padding: 2px 5px;
+    font-size: 7px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* Translation result */
+  .translation-result {
+    background: #0a1a1a;
+    border: 1px solid var(--teal-dark);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 9px;
+    color: var(--teal-bright);
+    align-self: flex-start;
+    max-width: 85%;
+  }
+
+  .tr-label { font-size: 7px; color: var(--teal-mid); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Translate tab content */
+  .translate-area { padding: 8px; display: flex; flex-direction: column; gap: 7px; flex: 1; background: var(--sky); }
+  .translate-box { border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 9px; font-family: 'Courier New', monospace; min-height: 68px; background: var(--panel); color: var(--cream-dim); resize: none; width: 100%; }
+  .lang-toggle { display: flex; gap: 4px; }
+  .lang-btn { flex: 1; text-align: center; padding: 4px; font-size: 8px; border: 1px solid var(--border); border-radius: 4px; color: #555; background: var(--panel); }
+  .lang-btn.active { background: var(--teal-dark); color: var(--teal-bright); border-color: var(--teal-mid); }
+  .translate-action-btn { background: var(--moon-deep); color: var(--sky); border: none; border-radius: 6px; padding: 6px; font-size: 9px; font-family: 'Courier New', monospace; cursor: pointer; text-align: center; letter-spacing: 1px; font-weight: bold; }
+  .result-box { border: 1px solid var(--teal-dark); border-radius: 6px; padding: 6px 8px; font-size: 9px; background: #0a1a1a; color: var(--teal-bright); min-height: 68px; }
+  .result-label { font-size: 7px; color: var(--teal-mid); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+
+  /* Image gen */
+  .img-placeholder {
+    background: radial-gradient(circle at 60% 40%, var(--moon-glow) 0%, var(--moon-deep) 40%, #1a0a00 70%, var(--sky) 100%);
+    border-radius: 6px;
+    height: 78px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    color: var(--cream-dim);
+    font-size: 8px;
+    padding: 6px;
+    margin-bottom: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Input area */
+  .input-area {
+    padding: 6px 8px;
+    background: var(--night);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 5px;
+    align-items: flex-end;
+  }
+
+  .chat-input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 5px 8px;
+    font-size: 9px;
+    font-family: 'Courier New', monospace;
+    resize: none;
+    background: var(--panel);
+    color: #444;
+    height: 28px;
+  }
+
+  .send-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--moon-deep);
+    border: none;
+    color: var(--sky);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-weight: bold;
+  }
+
+  /* Privacy badge */
+  .privacy-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 5px 10px;
+    font-size: 8px;
+    color: var(--teal-bright);
+  }
+
+  /* Card wrapper */
+  .screen { background: #111120; border: 1px solid #2a2a3a; border-radius: 6px; overflow: hidden; }
+
+  .screen-label {
+    background: var(--night);
+    color: var(--cream-dim);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .screen-label .tag { background: #2a2a3a; padding: 2px 6px; border-radius: 2px; font-size: 9px; color: var(--cream-dim); }
+  .screen-label .tag.gold { background: #3a2a00; color: var(--moon-mid); }
+  .screen-label .tag.teal { background: var(--teal-dark); color: var(--teal-bright); }
+
+  .screen-content { padding: 14px; display: flex; justify-content: center; }
+
+  .annotation {
+    background: #0d0d1a;
+    border-left: 2px solid var(--teal-mid);
+    padding: 4px 8px;
+    font-size: 9px;
+    color: var(--cream-dim);
+    margin: 3px 10px;
+  }
+
+  .annotation.gold { border-left-color: var(--moon-deep); color: var(--moon-mid); }
+
+  /* Summary section */
+  .arch-box {
+    grid-column: 1 / -1;
+    background: #111120;
+    border: 1px solid #2a2a3a;
+    border-radius: 6px;
+    padding: 24px;
+  }
+
+  .arch-box h2 {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cream-dim);
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+
+  /* Palette strip */
+  .painting-strip {
+    display: flex;
+    gap: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    height: 24px;
+    margin-bottom: 20px;
+    border: 1px solid #333;
+  }
+
+  .paint-swatch { flex: 1; }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .feature-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .feature-card .icon { font-size: 18px; margin-bottom: 5px; }
+  .feature-card h3 { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--moon-mid); margin-bottom: 4px; }
+  .feature-card p { font-size: 9px; color: var(--cream-dim); line-height: 1.4; }
+
+  .ready-banner {
+    background: var(--sky);
+    border: 1px solid var(--moon-deep);
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(212, 137, 10, 0.1);
+  }
+
+  .ready-banner .kr {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--moon-glow);
+    letter-spacing: 4px;
+  }
+
+  .ready-banner .en {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    color: var(--teal-bright);
+    letter-spacing: 3px;
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .ready-banner .status {
+    font-size: 10px;
+    color: #4CAF50;
+    margin-top: 12px;
+    letter-spacing: 1px;
+  }
+
+  .color-credit {
+    font-size: 10px;
+    color: var(--teal-mid);
+    font-style: italic;
+    text-align: center;
+    margin-top: 12px;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>달님 · Dalnim — Wireframe v0.4 — Her Painting's Palette</h1>
+  <p class="palette-note">Colors pulled directly from her moon painting — amber gold, deep black, luminous teal</p>
+</div>
+
+<!-- Palette swatches -->
+<div class="palette-row">
+  <div class="swatch"><div class="swatch-color" style="background:#0A0A0F; border-color:#333;"></div><div class="swatch-label">Sky Black</div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#D4890A;"></div><div class="swatch-label">Moon Deep</div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#E8A020;"></div><div class="swatch-label">Moon Mid</div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#F0B830;"></div><div class="swatch-label">Moon Glow</div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#0D5A5A;"></div><div class="swatch-label">Teal Dark</div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#1A8A8A;"></div><div class="swatch-label">Teal Mid</div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#2ABAAA;"></div><div class="swatch-label">Teal Bright</div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#E8DCC0;"></div><div class="swatch-label">Cream</div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#C04030;"></div><div class="swatch-label">Red Dome</div></div>
+</div>
+
+<div class="screens-grid">
+
+  <!-- SCREEN 1: AI Chat -->
+  <div>
+    <div class="screen">
+      <div class="screen-label">Screen 1 — AI Chat <span class="tag gold">3 models</span></div>
+      <div class="screen-content">
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="status-bar"><span>9:41</span><span>· · ·</span></div>
+            <div class="app-header">
+              <div class="app-name-korean">달님<span class="dot-sep">·</span>Dalnim</div>
+              <div class="app-name-roman">your private space</div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab active">🤖 AI</div>
+              <div class="tab">🌐 번역</div>
+              <div class="tab">🎨 Image</div>
+              <div class="tab">💬 Chat</div>
+            </div>
+            <div class="model-selector">
+              <span class="model-label">Model:</span>
+              <div class="model-dot dot-claude"></div>
+              <select class="model-dropdown">
+                <option>Claude (Anthropic)</option>
+                <option>ChatGPT (OpenAI)</option>
+                <option>Gemini (Google)</option>
+              </select>
+            </div>
+            <div class="usage-bar-wrap">
+              <div class="usage-top"><span>Today</span><span>17 / 50</span></div>
+              <div class="usage-bar"><div class="usage-fill-gold" style="width:34%"></div></div>
+            </div>
+            <div class="chat-area">
+              <div class="msg user">
+                What's the best way to remove a wine stain?
+                <div class="msg-meta">You · 9:38 AM</div>
+              </div>
+              <div class="msg ai">
+                Act fast — blot with a clean cloth, then pour cold sparkling water on it. The carbonation lifts the stain before it sets...
+                <div class="msg-meta">Claude · 9:38 AM</div>
+              </div>
+              <div class="msg user">
+                What if it's already dried?
+                <div class="msg-meta">You · 9:40 AM</div>
+              </div>
+            </div>
+            <div class="input-area">
+              <textarea class="chat-input" readonly>Ask anything...</textarea>
+              <button class="send-btn">↑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation gold">↑ Gold active tab = moonlight glow</div>
+      <div class="annotation">↑ "번역" = Translate in Korean on the tab</div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: Translation -->
+  <div>
+    <div class="screen">
+      <div class="screen-label">Screen 2 — Translation <span class="tag teal">번역</span></div>
+      <div class="screen-content">
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="status-bar"><span>9:41</span><span>· · ·</span></div>
+            <div class="app-header">
+              <div class="app-name-korean">달님<span class="dot-sep">·</span>Dalnim</div>
+              <div class="app-name-roman">your private space</div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab">🤖 AI</div>
+              <div class="tab active">🌐 번역</div>
+              <div class="tab">🎨 Image</div>
+              <div class="tab">💬 Chat</div>
+            </div>
+            <div class="translate-area">
+              <div class="lang-toggle">
+                <div class="lang-btn active">한국어 → 영어</div>
+                <div class="lang-btn">English → 한국어</div>
+              </div>
+              <textarea class="translate-box" readonly>이 계약서를 이해하기 어렵네요. 번역해 주실 수 있나요?</textarea>
+              <button class="translate-action-btn">↓ 번역 · TRANSLATE ↓</button>
+              <div class="result-box">
+                <div class="result-label">🌐 English</div>
+                I'm having trouble understanding this contract. Could you translate it for me?
+              </div>
+              <div style="font-size:8px; color:#333; text-align:center;">counts as 1 message</div>
+            </div>
+            <div class="input-area" style="justify-content:center; padding: 8px;">
+              <div style="font-size:8px; color:#333; text-align:center;">paste anything — articles, documents, websites</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">↑ Korean UI label "번역" on tab and button</div>
+      <div class="annotation">↑ Teal = secondary actions throughout</div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: Image Gen -->
+  <div>
+    <div class="screen">
+      <div class="screen-label">Screen 3 — Image Gen <span class="tag gold">DALL-E</span></div>
+      <div class="screen-content">
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="status-bar"><span>9:41</span><span>· · ·</span></div>
+            <div class="app-header">
+              <div class="app-name-korean">달님<span class="dot-sep">·</span>Dalnim</div>
+              <div class="app-name-roman">your private space</div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab">🤖 AI</div>
+              <div class="tab">🌐 번역</div>
+              <div class="tab active">🎨 Image</div>
+              <div class="tab">💬 Chat</div>
+            </div>
+            <div class="usage-bar-wrap">
+              <div class="usage-top"><span>Images today</span><span>2 / 5</span></div>
+              <div class="usage-bar"><div class="usage-fill-teal" style="width:40%"></div></div>
+            </div>
+            <div class="chat-area">
+              <div class="msg user">
+                A full moon over a calm Korean village, warm amber light, oil painting style
+                <div class="msg-meta">You · 9:35 AM</div>
+              </div>
+              <div class="msg ai">
+                <div class="img-placeholder">
+                  <span>🌕 image appears here · tap to save</span>
+                </div>
+                <div class="msg-meta">DALL-E · 9:36 AM</div>
+              </div>
+            </div>
+            <div class="input-area">
+              <textarea class="chat-input" readonly>Describe your image... (한국어도 OK)</textarea>
+              <button class="send-btn">✦</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation">↑ Image meter uses teal — separate from AI message meter</div>
+      <div class="annotation gold">↑ She can prompt in Korean or English</div>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: Private Chat -->
+  <div>
+    <div class="screen">
+      <div class="screen-label">Screen 4 — Messages <span class="tag teal">Kakao → this</span></div>
+      <div class="screen-content">
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="status-bar"><span>9:41</span><span>· · ·</span></div>
+            <div class="app-header">
+              <div class="app-name-korean">달님<span class="dot-sep">·</span>Dalnim</div>
+              <div class="app-name-roman">your private space</div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab">🤖 AI</div>
+              <div class="tab">🌐 번역</div>
+              <div class="tab">🎨 Image</div>
+              <div class="tab active">💬 Chat</div>
+            </div>
+            <div class="privacy-badge">
+              🔒 Private · Only you and Keith
+            </div>
+            <div class="chat-area">
+              <div class="msg them">
+                Check this out — thought of you immediately
+                <div class="msg-meta">Keith · 9:18 AM</div>
+              </div>
+              <div class="msg them">
+                달이 뜨는 제주의 밤 — Jeju Island night article
+                <div class="msg-meta">Keith · 9:18 AM</div>
+                <button class="translate-btn">🌐 번역 · Translate</button>
+              </div>
+              <div class="translation-result">
+                <div class="tr-label">🌐 Translated</div>
+                "The night the moon rises over Jeju..."
+              </div>
+              <div class="msg me">
+                Oh this is beautiful 🌕 감사해요
+                <div class="msg-meta">You · 9:25 AM</div>
+              </div>
+            </div>
+            <div class="input-area">
+              <textarea class="chat-input" readonly>Message Keith...</textarea>
+              <button class="send-btn">↑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="annotation gold">↑ Your data. No company. Not Kakao.</div>
+      <div class="annotation">↑ Translate button right on any message, inline result</div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="arch-box">
+    <h2>🎨 Color Story — From Her Painting to the App</h2>
+
+    <div class="painting-strip">
+      <div class="paint-swatch" style="background:#0A0A0F; flex:2;"></div>
+      <div class="paint-swatch" style="background:#1a0a00;"></div>
+      <div class="paint-swatch" style="background:#D4890A; flex:2;"></div>
+      <div class="paint-swatch" style="background:#E8A020; flex:2;"></div>
+      <div class="paint-swatch" style="background:#F0B830; flex:3;"></div>
+      <div class="paint-swatch" style="background:#E8A020; flex:2;"></div>
+      <div class="paint-swatch" style="background:#D4890A;"></div>
+      <div class="paint-swatch" style="background:#1a0a00;"></div>
+      <div class="paint-swatch" style="background:#0D5A5A; flex:2;"></div>
+      <div class="paint-swatch" style="background:#1A8A8A; flex:2;"></div>
+      <div class="paint-swatch" style="background:#2ABAAA;"></div>
+      <div class="paint-swatch" style="background:#E8DCC0;"></div>
+      <div class="paint-swatch" style="background:#C04030;"></div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="icon">🤖</div>
+        <h3>AI Chat</h3>
+        <p>Claude, ChatGPT, Gemini. 50 msg/day. Model picker always visible.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🌐</div>
+        <h3>번역 · Translate</h3>
+        <p>Korean ↔ English. Paste anything. One-tap on messages. No extra cost.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🎨</div>
+        <h3>Image Gen</h3>
+        <p>DALL-E. Describe in English or 한국어. 5 images/day.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">💬</div>
+        <h3>Private Chat</h3>
+        <p>Replaces Kakao. Keith's Supabase. No third party owns this.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🌕</div>
+        <h3>Her Colors</h3>
+        <p>Black sky. Moon amber. Her teal. Pulled from her painting.</p>
+      </div>
+    </div>
+
+    <div class="ready-banner">
+      <div class="kr">달님 · Dalnim</div>
+      <div class="en">full moon · private · just for her</div>
+      <div class="status">✅ ALL DECISIONS MADE — READY FOR CLAUDE CODE</div>
+    </div>
+
+    <p class="color-credit">Color palette derived from her original oil painting. She painted the moon. You built the app around it.</p>
+
+  </div>
+
+</div>
+
+</body>
+</html>
