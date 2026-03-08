@@ -535,6 +535,16 @@
       color: #fff;
       animation: pulse 1.2s ease-in-out infinite;
     }
+    #voiceLangBtn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--cream-dim);
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+      width: 32px;
+      height: 44px;
+      padding: 0;
+    }
 
     /* ===== EMOJI PICKER ===== */
     #screen-chat .input-bar { position: relative; }
@@ -644,6 +654,7 @@
       <div class="messages" id="aiMessages"></div>
       <div class="input-bar">
         <textarea id="aiInput" rows="1" placeholder="메시지를 입력하세요 · Type a message..." oninput="autoResize(this)"></textarea>
+        <button id="voiceLangBtn" onclick="toggleVoiceLang()">EN</button>
         <button id="voiceBtn" onclick="toggleVoice()">🎤</button>
         <button onclick="sendAiMessage()" id="aiSendBtn">↑</button>
       </div>
@@ -1189,6 +1200,35 @@
     // ===== VOICE INPUT =====
     let recognition = null;
     let isRecording = false;
+    let voiceLangOverride = null; // null = auto-detect from browser
+
+    function getVoiceLang() {
+      return voiceLangOverride || navigator.language || 'en-US';
+    }
+
+    function toggleVoiceLang() {
+      const btn = document.getElementById('voiceLangBtn');
+      if (voiceLangOverride === 'ko-KR') {
+        voiceLangOverride = 'en-US';
+        btn.textContent = 'EN';
+      } else if (voiceLangOverride === 'en-US') {
+        voiceLangOverride = null;
+        btn.textContent = 'auto';
+      } else {
+        voiceLangOverride = 'ko-KR';
+        btn.textContent = '한';
+      }
+      console.log('[Voice] lang set to:', getVoiceLang(), voiceLangOverride ? '(manual)' : '(auto)');
+    }
+
+    // Init the lang button label based on browser language
+    (function initVoiceLangBtn() {
+      const btn = document.getElementById('voiceLangBtn');
+      const lang = navigator.language || 'en-US';
+      btn.textContent = lang.startsWith('ko') ? '한' : 'EN';
+      // Start as auto — button shows what auto-detect resolved to
+      // First tap switches to the other language
+    })();
 
     function toggleVoice() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1202,30 +1242,37 @@
         return;
       }
 
+      const lang = getVoiceLang();
+      console.log('[Voice] starting recognition with lang:', lang);
+
       recognition = new SpeechRecognition();
-      recognition.lang = 'ko-KR';
+      recognition.lang = lang;
       recognition.interimResults = false;
 
       recognition.onstart = () => {
         isRecording = true;
         document.getElementById('voiceBtn').classList.add('voice-active');
+        console.log('[Voice] recording started');
       };
 
       recognition.onresult = (e) => {
-        const transcript = e.results[0][0].transcript;
+        const result = e.results[0][0];
+        console.log('[Voice] result:', result.transcript, 'confidence:', result.confidence);
         const input = document.getElementById('aiInput');
-        input.value += (input.value ? ' ' : '') + transcript;
+        input.value += (input.value ? ' ' : '') + result.transcript;
         autoResize(input);
       };
 
       recognition.onend = () => {
         isRecording = false;
         document.getElementById('voiceBtn').classList.remove('voice-active');
+        console.log('[Voice] recording ended');
       };
 
-      recognition.onerror = () => {
+      recognition.onerror = (e) => {
         isRecording = false;
         document.getElementById('voiceBtn').classList.remove('voice-active');
+        console.error('[Voice] error:', e.error, e.message);
       };
 
       recognition.start();
