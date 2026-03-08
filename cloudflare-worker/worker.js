@@ -444,6 +444,41 @@ async function handleUsage(env) {
   }, 200, env);
 }
 
+/**
+ * POST /api/transcribe
+ * Accepts multipart form data with an audio file.
+ * Forwards to OpenAI Whisper API for transcription.
+ * → { "text": "..." }
+ */
+async function handleTranscribe(request, env) {
+  const formData = await request.formData();
+  const file = formData.get('file');
+
+  if (!file) {
+    return errorResponse('No audio file provided.', 400, env);
+  }
+
+  const whisperForm = new FormData();
+  whisperForm.append('file', file, 'voice.webm');
+  whisperForm.append('model', 'whisper-1');
+
+  const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+    },
+    body: whisperForm,
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Whisper API error (${res.status}): ${err}`);
+  }
+
+  const data = await res.json();
+  return jsonResponse({ text: data.text }, 200, env);
+}
+
 // ---------------------------------------------------------------------------
 // Main Router
 // ---------------------------------------------------------------------------
@@ -481,6 +516,8 @@ export default {
           return await handleMessage(request, env);
         case '/api/auth':
           return await handleAuth(request, env);
+        case '/api/transcribe':
+          return await handleTranscribe(request, env);
         default:
           return errorResponse('Not found.', 404, env);
       }

@@ -535,17 +535,6 @@
       color: #fff;
       animation: pulse 1.2s ease-in-out infinite;
     }
-    #voiceLangBtn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--cream-dim);
-      font-size: 13px;
-      width: 36px;
-      height: 44px;
-      padding: 0;
-      letter-spacing: -1px;
-    }
-
     /* ===== EMOJI PICKER ===== */
     #screen-chat .input-bar { position: relative; }
     #emojiBtn {
@@ -654,7 +643,6 @@
       <div class="messages" id="aiMessages"></div>
       <div class="input-bar">
         <textarea id="aiInput" rows="1" placeholder="메시지를 입력하세요 · Type a message..." oninput="autoResize(this)"></textarea>
-        <button id="voiceLangBtn" onclick="toggleVoiceLang()">EN</button>
         <button id="voiceBtn" onclick="toggleVoice()">🎤</button>
         <button onclick="sendAiMessage()" id="aiSendBtn">↑</button>
       </div>
@@ -1197,72 +1185,72 @@
       return last.dataset.created || new Date(0).toISOString();
     }
 
-    // ===== VOICE INPUT =====
-    let recognition = null;
+    // ===== VOICE INPUT (Whisper via Worker) =====
+    let mediaRecorder = null;
     let isRecording = false;
-    // Two-state toggle: 'en-US' or 'ko-KR', persisted in localStorage
-    let voiceLang = localStorage.getItem('dalnim_voice_lang')
-      || ((navigator.language || 'en-US').startsWith('ko') ? 'ko-KR' : 'en-US');
 
-    function updateVoiceLangBtn() {
-      const btn = document.getElementById('voiceLangBtn');
-      btn.textContent = voiceLang === 'ko-KR' ? '🇰🇷' : '🇺🇸';
-    }
+    async function toggleVoice() {
+      const btn = document.getElementById('voiceBtn');
 
-    function toggleVoiceLang() {
-      voiceLang = voiceLang === 'ko-KR' ? 'en-US' : 'ko-KR';
-      localStorage.setItem('dalnim_voice_lang', voiceLang);
-      updateVoiceLangBtn();
-      console.log('[Voice] lang set to:', voiceLang);
-    }
-
-    updateVoiceLangBtn();
-
-    function toggleVoice() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert('음성 인식이 지원되지 않습니다 · Voice input is not supported in this browser');
+      if (isRecording && mediaRecorder) {
+        mediaRecorder.stop();
         return;
       }
 
-      if (isRecording && recognition) {
-        recognition.stop();
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch {
+        alert('마이크 접근이 거부되었습니다 · Microphone access denied');
         return;
       }
 
-      console.log('[Voice] starting recognition with lang:', voiceLang);
+      const chunks = [];
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
 
-      recognition = new SpeechRecognition();
-      recognition.lang = voiceLang;
-      recognition.interimResults = false;
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
 
-      recognition.onstart = () => {
+      mediaRecorder.onstart = () => {
         isRecording = true;
-        document.getElementById('voiceBtn').classList.add('voice-active');
-        console.log('[Voice] recording started');
+        btn.classList.add('voice-active');
       };
 
-      recognition.onresult = (e) => {
-        const result = e.results[0][0];
-        console.log('[Voice] result:', result.transcript, 'confidence:', result.confidence);
-        const input = document.getElementById('aiInput');
-        input.value += (input.value ? ' ' : '') + result.transcript;
-        autoResize(input);
-      };
-
-      recognition.onend = () => {
+      mediaRecorder.onstop = async () => {
         isRecording = false;
-        document.getElementById('voiceBtn').classList.remove('voice-active');
-        console.log('[Voice] recording ended');
+        btn.classList.remove('voice-active');
+        stream.getTracks().forEach(t => t.stop());
+
+        if (!chunks.length) return;
+
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        btn.disabled = true;
+
+        try {
+          const form = new FormData();
+          form.append('file', blob, 'voice.webm');
+
+          const res = await fetch(`${API_BASE}/api/transcribe`, {
+            method: 'POST',
+            body: form,
+          });
+          const data = await res.json();
+
+          if (res.ok && data.text) {
+            const input = document.getElementById('aiInput');
+            input.value += (input.value ? ' ' : '') + data.text;
+            autoResize(input);
+          } else {
+            alert(data.error || '음성 인식 실패 · Transcription failed');
+          }
+        } catch {
+          alert('음성 인식 실패 · Transcription failed');
+        }
+        btn.disabled = false;
       };
 
-      recognition.onerror = (e) => {
-        isRecording = false;
-        document.getElementById('voiceBtn').classList.remove('voice-active');
-        console.error('[Voice] error:', e.error, e.message);
-      };
-
-      recognition.start();
+      mediaRecorder.start();
     }
 
     // ===== EMOJI PICKER =====
