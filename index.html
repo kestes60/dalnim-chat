@@ -539,11 +539,11 @@
       background: transparent;
       border: 1px solid var(--border);
       color: var(--cream-dim);
-      font-size: 11px;
-      font-family: 'Courier New', monospace;
-      width: 32px;
+      font-size: 13px;
+      width: 36px;
       height: 44px;
       padding: 0;
+      letter-spacing: -1px;
     }
 
     /* ===== EMOJI PICKER ===== */
@@ -1200,35 +1200,23 @@
     // ===== VOICE INPUT =====
     let recognition = null;
     let isRecording = false;
-    let voiceLangOverride = null; // null = auto-detect from browser
+    // Two-state toggle: 'en-US' or 'ko-KR', persisted in localStorage
+    let voiceLang = localStorage.getItem('dalnim_voice_lang')
+      || ((navigator.language || 'en-US').startsWith('ko') ? 'ko-KR' : 'en-US');
 
-    function getVoiceLang() {
-      return voiceLangOverride || navigator.language || 'en-US';
+    function updateVoiceLangBtn() {
+      const btn = document.getElementById('voiceLangBtn');
+      btn.textContent = voiceLang === 'ko-KR' ? '🇰🇷' : '🇺🇸';
     }
 
     function toggleVoiceLang() {
-      const btn = document.getElementById('voiceLangBtn');
-      if (voiceLangOverride === 'ko-KR') {
-        voiceLangOverride = 'en-US';
-        btn.textContent = 'EN';
-      } else if (voiceLangOverride === 'en-US') {
-        voiceLangOverride = null;
-        btn.textContent = 'auto';
-      } else {
-        voiceLangOverride = 'ko-KR';
-        btn.textContent = '한';
-      }
-      console.log('[Voice] lang set to:', getVoiceLang(), voiceLangOverride ? '(manual)' : '(auto)');
+      voiceLang = voiceLang === 'ko-KR' ? 'en-US' : 'ko-KR';
+      localStorage.setItem('dalnim_voice_lang', voiceLang);
+      updateVoiceLangBtn();
+      console.log('[Voice] lang set to:', voiceLang);
     }
 
-    // Init the lang button label based on browser language
-    (function initVoiceLangBtn() {
-      const btn = document.getElementById('voiceLangBtn');
-      const lang = navigator.language || 'en-US';
-      btn.textContent = lang.startsWith('ko') ? '한' : 'EN';
-      // Start as auto — button shows what auto-detect resolved to
-      // First tap switches to the other language
-    })();
+    updateVoiceLangBtn();
 
     function toggleVoice() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1242,11 +1230,10 @@
         return;
       }
 
-      const lang = getVoiceLang();
-      console.log('[Voice] starting recognition with lang:', lang);
+      console.log('[Voice] starting recognition with lang:', voiceLang);
 
       recognition = new SpeechRecognition();
-      recognition.lang = lang;
+      recognition.lang = voiceLang;
       recognition.interimResults = false;
 
       recognition.onstart = () => {
