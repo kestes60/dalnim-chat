@@ -207,11 +207,8 @@ async function handleChat(request, env) {
     }
   } catch (err) {
     console.error('AI call failed:', err.message);
-    return errorResponse(
-      '잠시 후 다시 시도해 주세요 · Please try again in a moment.',
-      502,
-      env,
-    );
+    // TODO: Remove debug message — restore generic error after debugging
+    return errorResponse(`${model} error: ${err.message}`, 502, env);
   }
 
   // Increment counter only after successful call
