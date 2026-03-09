@@ -643,7 +643,7 @@
       <div class="messages" id="aiMessages"></div>
       <div class="input-bar">
         <textarea id="aiInput" rows="1" placeholder="메시지를 입력하세요 · Type a message..." oninput="autoResize(this)"></textarea>
-        <button id="voiceBtn" onclick="toggleVoice()">🎤</button>
+        <button id="voiceBtn">🎤</button>
         <button onclick="sendAiMessage()" id="aiSendBtn">↑</button>
       </div>
     </div>
@@ -1185,28 +1185,33 @@
       return last.dataset.created || new Date(0).toISOString();
     }
 
-    // ===== VOICE INPUT (Whisper via Worker) =====
+    // ===== VOICE INPUT (Push-to-talk, Whisper via Worker) =====
+    const MAX_RECORD_MS = 10000;
     let mediaRecorder = null;
+    let recordStream = null;
+    let recordTimeout = null;
     let isRecording = false;
 
-    async function toggleVoice() {
+    function stopRecording() {
+      clearTimeout(recordTimeout);
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+    }
+
+    async function startRecording() {
+      if (isRecording) return;
       const btn = document.getElementById('voiceBtn');
 
-      if (isRecording && mediaRecorder) {
-        mediaRecorder.stop();
-        return;
-      }
-
-      let stream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recordStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch {
         alert('마이크 접근이 거부되었습니다 · Microphone access denied');
         return;
       }
 
       const chunks = [];
-      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorder = new MediaRecorder(recordStream, { mimeType: 'audio/webm' });
 
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunks.push(e.data);
@@ -1215,12 +1220,15 @@
       mediaRecorder.onstart = () => {
         isRecording = true;
         btn.classList.add('voice-active');
+        recordTimeout = setTimeout(stopRecording, MAX_RECORD_MS);
       };
 
       mediaRecorder.onstop = async () => {
         isRecording = false;
         btn.classList.remove('voice-active');
-        stream.getTracks().forEach(t => t.stop());
+        clearTimeout(recordTimeout);
+        recordStream.getTracks().forEach(t => t.stop());
+        recordStream = null;
 
         if (!chunks.length) return;
 
@@ -1252,6 +1260,21 @@
 
       mediaRecorder.start();
     }
+
+    // Bind push-to-talk: hold to record, release to stop
+    (function initVoiceBtn() {
+      const btn = document.getElementById('voiceBtn');
+      // Pointer events (mouse + touch unified)
+      btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        btn.setPointerCapture(e.pointerId);
+        startRecording();
+      });
+      btn.addEventListener('pointerup', stopRecording);
+      btn.addEventListener('pointercancel', stopRecording);
+      // Prevent context menu on long-press (mobile)
+      btn.addEventListener('contextmenu', (e) => e.preventDefault());
+    })();
 
     // ===== EMOJI PICKER =====
     const EMOJI_LIST = [
